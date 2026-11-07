@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>司机端 · 我的行程</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#1f2d3d;font:15px/1.5 "Microsoft YaHei",sans-serif}
+header{background:#1668dc;color:#fff;padding:16px 18px;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+header button{background:transparent;border:1px solid #fff;color:#fff;padding:4px 10px;border-radius:4px}
+main{padding:14px;max-width:680px;margin:0 auto}#login{position:fixed;inset:0;background:#f4f6fa;display:flex;align-items:center;justify-content:center}
+#login form{background:#fff;padding:26px;border-radius:10px;box-shadow:0 6px 24px #0001;width:300px}
+input{width:100%;padding:11px;margin:7px 0;border:1px solid #d6dee8;border-radius:6px}
+button.primary{width:100%;padding:11px;background:#1668dc;color:#fff;border:0;border-radius:6px}
+.profile{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px #0001}
+.order{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px #0001}
+.order h3{margin:0 0 6px;font-size:15px}.muted{color:#7a8ba3;font-size:13px}
+.amount{color:#e8490f;font-weight:bold;font-size:18px}
+.order button{padding:8px 14px;background:#1668dc;color:#fff;border:0;border-radius:6px;margin-top:8px}
+.tag{display:inline-block;background:#e8f0fe;color:#1668dc;border-radius:10px;padding:1px 8px;font-size:12px;margin-left:6px}
+</style>
+</head>
+<body>
+<div id="login"><form onsubmit="login(event)"><h3>司机登录</h3><input id="u" value="driver01"/><input id="p" type="password" value="Admin@123"/><button class="primary">登录</button><p id="msg" style="color:#e8490f"></p></form></div>
+<header><span>我的行程</span><button onclick="logout()">退出</button></header>
+<main>
+  <div class="profile" id="profile">加载中…</div>
+  <div id="orders"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.driver.token')||'';
+function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200){$('msg').textContent=j.msg;return}token=j.data.token;sessionStorage.setItem('taxi.driver.token',token);$('login').style.display='none';load()})}
+function logout(){sessionStorage.removeItem('taxi.driver.token');location.reload()}
+async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);const j=await r.json();if(j.code===401){$('login').style.display='flex'}return j}
+const statusText={DISPATCHED:'已派单',PICKUP:'行程中',FINISHED:'待核算',CALCULATED:'已核算',INVOICE_SUCCESS:'已完成',ABNORMAL:'异常'};
+async function load(){const me=await api('/api/v1/driver-app/me');if(me.code!==200){$('profile').textContent=me.msg;return}
+$('profile').innerHTML=`<b>${me.data.name}</b> <span class="tag">${me.data.fleetName||''}</span><div class="muted">工号 ${me.data.driverCode} · ${me.data.phone||''}</div>`;
+const j=await api('/api/v1/driver-app/orders?size=30');if(j.code!==200){$('orders').textContent=j.msg;return}
+$('orders').innerHTML=j.data.list.map(o=>`<div class="order"><h3>${o.order_no} <span class="tag">${statusText[o.status]||o.status}</span></h3>
+<div class="muted">${o.plate_no||''} ${o.start_address||'未填上车点'} → ${o.end_address||'未填下车点'}</div>
+<div class="amount">¥${Number(o.payable_amount||0).toFixed(2)}</div>
+${o.status==='DISPATCHED'?`<button onclick="pickup('${o.id}')">接到乘客</button>`:''}</div>`).join('')||'<div class="order">暂无行程</div>'}
+async function pickup(id){if(!confirm('确认已接到乘客？'))return;const j=await api(`/api/v1/driver-app/orders/${id}/pickup`,{method:'POST'});if(j.code!==200)return alert(j.msg);load()}
+if(token){$('login').style.display='none';load()}
+</script>
+</body>
+</html>

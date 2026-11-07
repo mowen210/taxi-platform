@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.taxi</groupId>
+        <artifactId>taxi-platform</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>taxi-domain</artifactId>
+    <name>taxi-domain</name>
+    <description>领域层：实体、仓储接口、领域服务、策略（计价/报警分级/围栏）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.taxi</groupId>
+            <artifactId>taxi-common</artifactId>
+        </dependency>
+        <!-- 仅使用注解（@TableName/@TableId/@TableLogic），不引入 ORM 运行时，保持领域层可脱网单测 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

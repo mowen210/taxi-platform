@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实时监控 · 出租汽车运营监管平台</title>
+  <link rel="stylesheet" href="/monitor.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">TX</span>
+    <div>
+      <h1>实时监控</h1>
+      <p>JT/T 808 定位 · 轨迹回放</p>
+    </div>
+  </div>
+  <div class="toolbar">
+    <span id="wsState" class="pill offline">未连接</span>
+    <span id="provider" class="pill">轨迹库 -</span>
+    <button id="btnLogout" class="ghost" hidden>退出</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="panel side">
+    <div class="panel-head">
+      <h2>车辆</h2>
+      <span id="vehicleSummary" class="muted">-</span>
+    </div>
+    <div id="loginBox" class="login">
+      <label>账号<input id="username" value="admin" autocomplete="username" /></label>
+      <label>口令<input id="password" type="password" placeholder="Admin@123" autocomplete="current-password" /></label>
+      <button id="btnLogin" class="primary">登录并连接</button>
+      <p class="hint">WebSocket 与 REST 共用登录令牌；令牌仅存于 sessionStorage。</p>
+    </div>
+    <ul id="vehicleList" class="vehicle-list" hidden></ul>
+    <div id="trackBox" class="track-box" hidden>
+      <div class="panel-head">
+        <h2>轨迹回放</h2>
+        <span id="trackTitle" class="muted">-</span>
+      </div>
+      <dl class="summary">
+        <div><dt>点数</dt><dd id="sumPoints">-</dd></div>
+        <div><dt>里程</dt><dd id="sumDistance">-</dd></div>
+        <div><dt>最高速度</dt><dd id="sumSpeed">-</dd></div>
+        <div><dt>时长</dt><dd id="sumDuration">-</dd></div>
+      </dl>
+      <div class="replay">
+        <button id="btnPlay" class="primary">播放</button>
+        <input id="progress" type="range" min="0" max="0" value="0" step="1" />
+        <select id="speed">
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+        </select>
+      </div>
+      <p id="replayHint" class="hint">选择车辆后加载最近 2 小时轨迹。</p>
+    </div>
+  </section>
+
+  <section class="panel map-panel">
+    <div class="map-head">
+      <h2>地图</h2>
+      <span id="mapMode" class="muted">Canvas 模式（追加 ?amapKey=高德Key 启用高德地图）</span>
+    </div>
+    <div id="map" class="map">
+      <canvas id="canvas"></canvas>
+    </div>
+  </section>
+</main>
+
+<script src="/monitor.js"></script>
+</body>
+</html>

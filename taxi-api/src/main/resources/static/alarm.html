@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>报警中心</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#e6edf7;font:14px/1.5 "Microsoft YaHei",sans-serif}
+header{display:flex;gap:12px;align-items:center;padding:14px 20px;background:#101b2e;border-bottom:1px solid #22314d}
+h1{font-size:18px;margin:0;flex:1}select,input,button{padding:7px;background:#0d1728;border:1px solid #2b4a6f;color:#e6edf7;border-radius:5px}
+button{cursor:pointer}button.primary{background:#165a8c}main{padding:16px 20px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid #1c2c45;text-align:left}
+th{color:#8fa3c0;font-weight:500}.lv3{color:#ff6b6b}.lv2{color:#ffb454}.lv1{color:#7fb7dd}
+.tag{display:inline-block;padding:1px 7px;border-radius:9px;background:#173154;font-size:12px}
+#toast{position:fixed;right:18px;top:18px;background:#8b1e1e;padding:12px 16px;border-radius:8px;display:none;max-width:320px}
+#login{position:fixed;inset:0;background:#0b1220;display:flex;align-items:center;justify-content:center}
+#login form{background:#101b2e;padding:24px;border:1px solid #24476f;border-radius:8px;width:280px}
+#login input{width:100%;margin:6px 0}
+</style>
+</head>
+<body>
+<div id="login"><form onsubmit="login(event)"><h3>报警中心登录</h3><input id="u" value="admin"/><input id="p" type="password" value="Admin@123"/><button class="primary" style="width:100%">登录</button></form></div>
+<header><h1>报警中心</h1>
+<select id="filter" onchange="load()"><option value="">全部状态</option><option value="0">未处置</option><option value="1">处置中</option><option value="2">已处置</option><option value="3">已忽略</option></select>
+<button onclick="load()">刷新</button><span id="ws" class="tag">未连接</span></header>
+<main><table><thead><tr><th>报警单号</th><th>时间</th><th>车辆</th><th>类型</th><th>等级</th><th>状态</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table></main>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.token')||'',ws=null;
+function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200)return alert(j.msg);token=j.data.token;sessionStorage.setItem('taxi.token',token);$('login').style.display='none';init()})}
+async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);if(r.status===401)$('login').style.display='flex';return r.json()}
+function init(){load();connect()}
+function connect(){if(ws)ws.close();ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/v1/alarm?token=${encodeURIComponent(token)}`);ws.onopen=()=>$('ws').textContent='实时已连接';ws.onclose=()=>{ $('ws').textContent='已断开'; setTimeout(connect,3000)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='alarm'){toast(`新报警：${m.data.plateNo||''} ${m.data.alarmTypeDesc}（${m.data.alarmLevelDesc}）`);load()}}}
+function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',5000)}
+async function load(){const st=$('filter').value;const j=await api('/api/v1/alarms?size=50'+(st?'&handleStatus='+st:''));if(j.code!==200)return;const lv=['','lv1','lv2','lv3'];$('rows').innerHTML=j.data.list.map(a=>`<tr><td>${a.alarmNo}</td><td>${(a.alarmTime||'').replace('T',' ')}</td><td>${a.plateNo||'-'}</td><td>${a.alarmTypeDesc}</td><td class="${lv[a.alarmLevel]}">${a.alarmLevelDesc}</td><td>${a.handleStatusDesc}</td><td>${actions(a)}</td></tr>`).join('')||'<tr><td colspan="7">暂无报警</td></tr>'}
+function actions(a){let h='';if(a.handleStatus===0)h+=`<button onclick="handle('${a.id}','ACK')">受理</button> `;if(a.handleStatus<2)h+=`<button onclick="handle('${a.id}','HANDLE')">处置</button> <button onclick="handle('${a.id}','IGNORE')">忽略</button> `;h+=`<button onclick="media('${a.id}')">媒体</button>`;return h}
+async function handle(id,action){let remark='';if(action!=='ACK'){remark=prompt(action==='HANDLE'?'处置说明':'忽略原因');if(!remark)return}const j=await api(`/api/v1/alarms/${id}/handle`,{method:'POST',body:JSON.stringify({action,remark})});if(j.code!==200)return alert(j.msg);load()}
+async function media(id){const j=await api(`/api/v1/alarms/${id}/media`);if(j.code!==200||!j.data.length)return alert('暂无关联媒体');const m=j.data[0];const r=await fetch(`/api/v1/media/${m.id}/file`,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return alert('媒体读取失败');const b=await r.blob();window.open(URL.createObjectURL(b),'_blank')}
+if(token){$('login').style.display='none';init()}
+</script>
+</body>
+</html>

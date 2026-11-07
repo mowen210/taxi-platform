@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>出租汽车运营监管 · 数据大屏</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070e1b;color:#dbe9ff;font:14px/1.5 "Microsoft YaHei",sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid #17304f;background:linear-gradient(90deg,#0a1a30,#08111f)}
+h1{margin:0;font-size:22px;letter-spacing:2px;color:#5fd4ff}
+#login{position:fixed;inset:0;background:#070e1b;display:flex;align-items:center;justify-content:center;z-index:9}
+#login form{background:#0e1c31;padding:28px;border:1px solid #24476f;border-radius:10px;width:300px}
+input,button{width:100%;padding:10px;margin:6px 0;background:#0a1626;border:1px solid #2b537d;color:#dbe9ff;border-radius:6px}
+button{background:#124b78;cursor:pointer}
+main{padding:20px 28px}
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.card{background:linear-gradient(160deg,#0e2038,#0a1526);border:1px solid #1d3a5c;border-radius:10px;padding:14px}
+.card b{display:block;font-size:26px;color:#4fd1ff;margin-top:6px}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-top:16px}
+.panel{background:#0b1728;border:1px solid #1c3553;border-radius:10px;padding:14px}
+.panel h2{font-size:15px;margin:0 0 10px;color:#8fb8dd;font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:8px;border-bottom:1px solid #16283f;text-align:left;color:#b9cfe6}
+canvas{width:100%;height:240px}
+.ok{color:#3ddc97}.warn{color:#ffb454}
+</style>
+</head>
+<body>
+<div id="login"><form onsubmit="login(event)"><h3>运营大屏登录</h3>
+<input id="u" value="admin" autocomplete="username"/><input id="p" type="password" value="Admin@123"/>
+<button>进入大屏</button><p id="msg" class="warn"></p></form></div>
+<header><h1>出租汽车运营监管 · 实时数据大屏</h1><span id="clock" class="warn"></span></header>
+<main>
+  <div class="cards">
+    <div class="card">今日订单<b id="orders">-</b></div>
+    <div class="card">今日营收<b id="revenue">-</b></div>
+    <div class="card">在线车辆<b id="online">-</b></div>
+    <div class="card">未处置报警<b id="alarms">-</b></div>
+    <div class="card">车队数<b id="fleets">-</b></div>
+    <div class="card">在职司机<b id="drivers">-</b></div>
+  </div>
+  <div class="grid">
+    <div class="panel"><h2>近 7 天订单趋势</h2><canvas id="trend"></canvas></div>
+    <div class="panel"><h2>报警类型分布</h2><canvas id="alarmChart"></canvas></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h2>车队排行（近 7 天）</h2><table><thead><tr><th>车队</th><th>订单数</th><th>营收</th></tr></thead><tbody id="rank"></tbody></table></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.token')||'';
+function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200){$('msg').textContent=j.msg;return}token=j.data.token;sessionStorage.setItem('taxi.token',token);$('login').style.display='none';load()})}
+async function api(path){const r=await fetch(path,{headers:{Authorization:'Bearer '+token}});const j=await r.json();if(j.code===401){$('login').style.display='flex';throw new Error(j.msg)}return j.data}
+async function load(){try{const [o,t,f,a]=await Promise.all([api('/api/v1/stats/overview'),api('/api/v1/stats/trend?days=7'),api('/api/v1/stats/fleets?days=7'),api('/api/v1/stats/alarms?days=7')]);
+$('orders').textContent=o.todayOrders;$('revenue').textContent='¥'+Number(o.todayRevenue).toFixed(2);$('online').textContent=o.onlineVehicles;$('alarms').textContent=o.openAlarms;$('fleets').textContent=o.fleetCount;$('drivers').textContent=o.driverCount;
+drawTrend(t);drawAlarms(a);$('rank').innerHTML=f.map(x=>`<tr><td>${x.fleetName}</td><td>${x.orders}</td><td>¥${Number(x.revenue).toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="3">暂无数据</td></tr>'}catch(e){}}
+function prep(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);return[x,r.width,r.height]}
+function drawTrend(rows){const [x,w,h]=prep($('trend'));const max=Math.max(1,...rows.map(r=>r.orders));x.strokeStyle='#2f6f9f';x.lineWidth=2;x.beginPath();rows.forEach((r,i)=>{const px=30+i*(w-50)/Math.max(1,rows.length-1),py=h-30-(r.orders/max)*(h-60);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.fillStyle='#7fb7dd';rows.forEach((r,i)=>{const px=30+i*(w-50)/Math.max(1,rows.length-1);x.fillText(r.date.slice(5),px-14,h-8);x.fillStyle='#4fd1ff';x.fillText(r.orders,px-4,h-34);x.fillStyle='#7fb7dd'})}
+function drawAlarms(rows){const [x,w,h]=prep($('alarmChart'));const max=Math.max(1,...rows.map(r=>r.cnt));rows.slice(0,6).forEach((r,i)=>{const bw=(w-40)/Math.max(1,rows.slice(0,6).length);const bh=(r.cnt/max)*(h-50);x.fillStyle='#2f6f9f';x.fillRect(20+i*bw,h-30-bh,bw-12,bh);x.fillStyle='#9fc4de';x.fillText(r.type.slice(0,8),22+i*bw,h-10);x.fillStyle='#4fd1ff';x.fillText(r.cnt,22+i*bw,h-36-bh)})}
+if(token){$('login').style.display='none';load()}setInterval(()=>{$('clock').textContent=new Date().toLocaleString('zh-CN')},1000);setInterval(()=>{if(token)load()},15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    max-connections: 2000
+    accept-count: 200
+
+spring:
+  application:
+    name: taxi-platform
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:taxi_platform}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&sessionVariables=time_zone='%2B08:00'
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    hikari:
+      pool-name: taxi-hikari
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+  mvc:
+    problemdetails:
+      enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+security:
+  jwt:
+    # 生产环境必须通过环境变量注入，长度不少于 32 字节
+    secret: ${JWT_SECRET:taxi-platform-dev-only-jwt-secret-key-change-me-please}
+    issuer: taxi-platform
+    ttl-seconds: ${JWT_TTL_SECONDS:7200}
+  # Base64 编码的 32 字节 AES-256 密钥，生产环境必须替换
+  aes-key: ${AES_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+  hmac-secret: ${HMAC_SECRET:taxi-platform-dev-only-hmac-secret-change-me}
+  login:
+    max-fail: ${LOGIN_MAX_FAIL:5}
+    lock-minutes: ${LOGIN_LOCK_MINUTES:15}
+
+logging:
+  config: classpath:logback-spring.xml
+
+# JT/T 808 接入服务（Netty）
+protocol:
+  enabled: ${PROTOCOL_ENABLED:true}
+  port: ${PROTOCOL_PORT:7611}
+  # 0 表示按 CPU 自动计算工作线程数
+  worker-threads: ${PROTOCOL_WORKER_THREADS:0}
+  # 超过该秒数未收到任何上行报文则断开连接
+  idle-seconds: ${PROTOCOL_IDLE_SECONDS:180}
+  # 鉴权码有效期
+  auth-ttl: ${PROTOCOL_AUTH_TTL:7d}
+  # 在线会话有效期，心跳会刷新
+  session-ttl: ${PROTOCOL_SESSION_TTL:5m}
+
+# 轨迹存储：生产用 tdengine（taosAdapter REST），没有时序库的开发机用 mysql 兜底表
+track:
+  provider: ${TRACK_PROVIDER:mysql}
+  tdengine:
+    url: ${TDENGINE_URL:http://127.0.0.1:6041}
+    database: ${TDENGINE_DATABASE:taxi_track}
+    username: ${TDENGINE_USERNAME:root}
+    password: ${TDENGINE_PASSWORD:taosdata}
+
+# 短信通道：log 为不真发只打日志的本地实现，接入厂商后替换 provider
+sms:
+  provider: ${SMS_PROVIDER:log}
+
+# 定时任务
+job:
+  cert-warn:
+    # 默认每日 08:00 扫描证件与车辆证照到期情况
+    cron: ${JOB_CERT_WARN_CRON:0 0 8 * * ?}
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
