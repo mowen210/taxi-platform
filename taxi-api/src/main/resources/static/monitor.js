@@ -84,6 +84,12 @@
   async function api(path) {
     const resp = await fetch(path, { headers: { Authorization: 'Bearer ' + state.token } });
     const body = await resp.json();
+    if (body.code === 401) {
+      sessionStorage.removeItem('taxi.token');
+      state.token = '';
+      location.replace('/login?redirect=/monitor.html');
+      throw new Error('登录已失效');
+    }
     if (body.code !== 200) throw new Error(body.msg || ('HTTP ' + resp.status));
     return body.data;
   }
@@ -456,7 +462,9 @@
   el.speed.onchange = () => { state.speed = Number(el.speed.value); };
   window.addEventListener('resize', () => { if (!state.amap) render(); });
 
-  if (state.token) {
-    start();
+  if (!state.token) {
+    location.replace('/login?redirect=/monitor.html');
+    return;
   }
+  start();
 })();

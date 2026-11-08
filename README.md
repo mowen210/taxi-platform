@@ -53,6 +53,9 @@ Spring Boot 启动时会自动加载 `config/taxi.env`；代码只引用 `${KEY:
 
 - 健康检查：`GET http://localhost:8080/api/v1/health`
 - 接口文档：`http://localhost:8080/swagger-ui.html`
+- 管理登录：`http://localhost:8080/login`（独立登录页，登录后进入管理首页）
+- 管理首页：`http://localhost:8080/admin`（基础信息、运行参数、运营概览与内置菜单）
+- 基础信息设置：`http://localhost:8080/base`（车队、司机、车辆、终端/计价器绑定、发票记录）
 - 实时监控：`http://localhost:8080/monitor.html`（高德地图加 `?amapKey=`，默认 Canvas）
 - 报警中心：`http://localhost:8080/alarm.html`（WebSocket 实时推送）
 - 数据大屏：`http://localhost:8080/dashboard.html`

@@ -29,8 +29,8 @@ button.primary{width:100%;padding:11px;background:#1668dc;color:#fff;border:0;bo
 <script>
 const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.driver.token')||'';
 function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200){$('msg').textContent=j.msg;return}token=j.data.token;sessionStorage.setItem('taxi.driver.token',token);$('login').style.display='none';load()})}
-function logout(){sessionStorage.removeItem('taxi.driver.token');location.reload()}
-async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);const j=await r.json();if(j.code===401){$('login').style.display='flex'}return j}
+function logout(){sessionStorage.removeItem('taxi.driver.token');sessionStorage.removeItem('taxi.token');location.replace('/login')}
+async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);const j=await r.json();if(j.code===401){sessionStorage.removeItem('taxi.driver.token');sessionStorage.removeItem('taxi.token');location.replace('/login?redirect=/driver.html');throw new Error('登录已失效')}return j}
 const statusText={DISPATCHED:'已派单',PICKUP:'行程中',FINISHED:'待核算',CALCULATED:'已核算',INVOICE_SUCCESS:'已完成',ABNORMAL:'异常'};
 async function load(){const me=await api('/api/v1/driver-app/me');if(me.code!==200){$('profile').textContent=me.msg;return}
 $('profile').innerHTML=`<b>${me.data.name}</b> <span class="tag">${me.data.fleetName||''}</span><div class="muted">工号 ${me.data.driverCode} · ${me.data.phone||''}</div>`;
@@ -40,7 +40,7 @@ $('orders').innerHTML=j.data.list.map(o=>`<div class="order"><h3>${o.order_no} <
 <div class="amount">¥${Number(o.payable_amount||0).toFixed(2)}</div>
 ${o.status==='DISPATCHED'?`<button onclick="pickup('${o.id}')">接到乘客</button>`:''}</div>`).join('')||'<div class="order">暂无行程</div>'}
 async function pickup(id){if(!confirm('确认已接到乘客？'))return;const j=await api(`/api/v1/driver-app/orders/${id}/pickup`,{method:'POST'});if(j.code!==200)return alert(j.msg);load()}
-if(token){$('login').style.display='none';load()}
+if(!token){location.replace('/login?redirect=/driver.html')}else{$('login').style.display='none';load()}
 </script>
 </body>
 </html>

@@ -27,7 +27,7 @@ th{color:#8fa3c0;font-weight:500}.lv3{color:#ff6b6b}.lv2{color:#ffb454}.lv1{colo
 <script>
 const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.token')||'',ws=null;
 function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200)return alert(j.msg);token=j.data.token;sessionStorage.setItem('taxi.token',token);$('login').style.display='none';init()})}
-async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);if(r.status===401)$('login').style.display='flex';return r.json()}
+async function api(path,opt={}){opt.headers=Object.assign({},opt.headers,{Authorization:'Bearer '+token});if(opt.body)opt.headers['Content-Type']='application/json';const r=await fetch(path,opt);const j=await r.json();if(j.code===401){sessionStorage.removeItem('taxi.token');location.replace('/login?redirect=/alarm.html');throw new Error('登录已失效')}return j}
 function init(){load();connect()}
 function connect(){if(ws)ws.close();ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/v1/alarm?token=${encodeURIComponent(token)}`);ws.onopen=()=>$('ws').textContent='实时已连接';ws.onclose=()=>{ $('ws').textContent='已断开'; setTimeout(connect,3000)};ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='alarm'){toast(`新报警：${m.data.plateNo||''} ${m.data.alarmTypeDesc}（${m.data.alarmLevelDesc}）`);load()}}}
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',5000)}
@@ -35,7 +35,7 @@ async function load(){const st=$('filter').value;const j=await api('/api/v1/alar
 function actions(a){let h='';if(a.handleStatus===0)h+=`<button onclick="handle('${a.id}','ACK')">受理</button> `;if(a.handleStatus<2)h+=`<button onclick="handle('${a.id}','HANDLE')">处置</button> <button onclick="handle('${a.id}','IGNORE')">忽略</button> `;h+=`<button onclick="media('${a.id}')">媒体</button>`;return h}
 async function handle(id,action){let remark='';if(action!=='ACK'){remark=prompt(action==='HANDLE'?'处置说明':'忽略原因');if(!remark)return}const j=await api(`/api/v1/alarms/${id}/handle`,{method:'POST',body:JSON.stringify({action,remark})});if(j.code!==200)return alert(j.msg);load()}
 async function media(id){const j=await api(`/api/v1/alarms/${id}/media`);if(j.code!==200||!j.data.length)return alert('暂无关联媒体');const m=j.data[0];const r=await fetch(`/api/v1/media/${m.id}/file`,{headers:{Authorization:'Bearer '+token}});if(!r.ok)return alert('媒体读取失败');const b=await r.blob();window.open(URL.createObjectURL(b),'_blank')}
-if(token){$('login').style.display='none';init()}
+if(token){$('login').style.display='none';init()}else{location.replace('/login?redirect=/alarm.html')}
 </script>
 </body>
 </html>

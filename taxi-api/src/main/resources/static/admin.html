@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>管理首页 · 出租汽车运营监管平台</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#14243a; --muted:#7386a0; --line:#e4ebf4;
+    --brand:#1769e0; --brand-soft:#eaf2ff; --green:#0f9f7a; --green-soft:#e6f8f2;
+    --orange:#e78a20; --orange-soft:#fff5e6; --red:#d84f4f; --red-soft:#fff0f0;
+    --sidebar:#0c1b2d; --sidebar-2:#10243a; --sidebar-text:#a9bdd6; --shadow:0 10px 34px rgba(22,52,89,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+  body{display:flex;min-height:100vh}
+  a{text-decoration:none;color:inherit}
+  .sidebar{
+    width:238px;flex:0 0 238px;background:linear-gradient(180deg,var(--sidebar),#081524);
+    color:var(--sidebar-text);padding:22px 14px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:11px;padding:2px 8px 24px}
+  .mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#04111f;
+    background:linear-gradient(135deg,#5ce1c5,#37a7ff);box-shadow:0 8px 20px rgba(55,167,255,.25)}
+  .brand strong{display:block;color:#f2f8ff;font-size:15px;letter-spacing:.5px}
+  .brand small{display:block;color:#6f8aa8;font-size:10px;letter-spacing:1.5px;margin-top:4px}
+  .nav-label{font-size:10px;letter-spacing:1.8px;color:#5d7794;padding:14px 12px 8px}
+  .nav a{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;font-size:13px;color:var(--sidebar-text);margin:2px 0;transition:.16s}
+  .nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav a.active{background:linear-gradient(90deg,rgba(55,167,255,.22),rgba(55,167,255,.05));color:#fff;border:1px solid rgba(55,167,255,.25)}
+  .nav .ico{width:18px;text-align:center;opacity:.95}
+  .side-foot{margin-top:auto;padding:14px 10px 2px;border-top:1px solid rgba(148,177,214,.12);color:#58718f;font-size:11px;line-height:1.8}
+  .layout{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:68px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5}
+  .crumb{font-size:12px;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600;margin-left:6px}
+  .who{display:flex;align-items:center;gap:12px}
+  .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13px}
+  .who .name{font-size:13px;font-weight:600;line-height:1.3}
+  .who .role{font-size:11px;color:var(--muted)}
+  .logout{border:1px solid var(--line);background:#fff;color:#536986;border-radius:8px;padding:7px 11px;font-size:12px;cursor:pointer}
+  .logout:hover{color:var(--red);border-color:#f0caca}
+  main{padding:26px 28px 36px;max-width:1480px;width:100%;margin:0 auto}
+  .hero{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:20px}
+  .hero h1{font-size:25px;margin:0 0 7px;letter-spacing:.2px}
+  .hero p{margin:0;color:var(--muted);font-size:13px}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--green-soft);color:var(--green);font-size:11px;padding:6px 10px;border-radius:99px}
+  .dot{width:7px;height:7px;border-radius:99px;background:var(--green);box-shadow:0 0 0 4px rgba(15,159,122,.12)}
+  .grid{display:grid;gap:14px}
+  .stats{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:18px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:17px 17px 15px;box-shadow:var(--shadow)}
+  .stat .label{font-size:11.5px;color:var(--muted);letter-spacing:.2px}
+  .stat .value{font-size:25px;font-weight:700;margin:8px 0 3px;letter-spacing:.3px}
+  .stat .foot{font-size:11px;color:#93a4ba}
+  .stat.brand .value{color:var(--brand)} .stat.green .value{color:var(--green)}
+  .stat.orange .value{color:var(--orange)} .stat.red .value{color:var(--red)}
+  .cols{display:grid;grid-template-columns:1.02fr .98fr;gap:16px;margin-bottom:16px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 12px;border-bottom:1px solid #eef3f9}
+  .panel-head h2{font-size:15px;margin:0;font-weight:700}
+  .panel-head .hint{font-size:11px;color:var(--muted)}
+  .panel-body{padding:16px 18px}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:10px 12px;font-size:12.5px;line-height:1.5}
+  .kv dt{color:var(--muted)} .kv dd{margin:0;color:#243a57;word-break:break-all}
+  .tag{display:inline-flex;align-items:center;gap:5px;background:#f1f5fa;color:#526b87;border-radius:6px;padding:2px 7px;font-size:10.5px}
+  .tag.ok{background:var(--green-soft);color:var(--green)}
+  .params{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .param{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed #edf2f8;font-size:12px}
+  .param:last-child,.param:nth-last-child(2){border-bottom:0}
+  .param span{color:var(--muted)} .param b{font-weight:600;color:#2a405d;text-align:right;word-break:break-all}
+  .quick{grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:16px}
+  .quick a{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px;box-shadow:var(--shadow);transition:.18s;display:block}
+  .quick a:hover{border-color:#c6dcfa;transform:translateY(-2px);box-shadow:0 14px 30px rgba(22,52,89,.12)}
+  .quick .qico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);font-size:16px;margin-bottom:10px}
+  .quick b{font-size:13px;display:block;margin-bottom:4px}
+  .quick small{color:var(--muted);font-size:11px;line-height:1.5}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:11px 8px;border-bottom:1px solid #f0f4f9;color:#2a405d}
+  tr:last-child td{border-bottom:0}
+  .empty{color:var(--muted);font-size:12px;padding:18px 8px;text-align:center}
+  .badge{display:inline-block;border-radius:6px;padding:2px 7px;font-size:10.5px}
+  .badge.l1{background:var(--red-soft);color:var(--red)} .badge.l2{background:var(--orange-soft);color:var(--orange)}
+  .badge.l3{background:#eef2ff;color:#5b6ee1} .badge.ok{background:var(--green-soft);color:var(--green)}
+  .muted{color:var(--muted)}
+  .footer{color:#9aabc0;font-size:11px;text-align:center;padding:8px 0 0}
+  @media (max-width:1200px){.stats{grid-template-columns:repeat(3,1fr)}.cols{grid-template-columns:1fr}.quick{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:820px){
+    body{display:block}.sidebar{position:relative;width:100%;height:auto;flex:none;padding:14px}
+    .brand{padding-bottom:10px}.nav{display:flex;flex-wrap:wrap;gap:4px}.nav-label,.side-foot{display:none}
+    .nav a{padding:8px 10px}.topbar{padding:0 16px}main{padding:18px 16px 30px}
+    .hero{display:block}.stats{grid-template-columns:repeat(2,1fr)}.quick{grid-template-columns:1fr}
+    .params{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <div class="mark">TX</div>
+    <div><strong>出租汽车监管</strong><small>ADMIN CONSOLE</small></div>
+  </div>
+  <div class="nav-label">工作台</div>
+  <nav class="nav">
+    <a class="active" href="/admin"><span class="ico">◈</span>运营首页</a>
+    <a href="/base"><span class="ico">▦</span>基础信息设置</a>
+    <div class="nav-label">业务菜单</div>
+    <a href="/monitor.html"><span class="ico">⌖</span>实时监控</a>
+    <a href="/alarm.html"><span class="ico">⚠</span>报警中心</a>
+    <a href="/dashboard.html"><span class="ico">▤</span>数据大屏</a>
+    <a href="/driver.html"><span class="ico">☰</span>司机端</a>
+  </nav>
+  <div class="side-foot">
+    出租汽车运营监管平台<br/>v1.0.0 · JT/T 808 / 905 / 1078
+  </div>
+</aside>
+
+<div class="layout">
+  <header class="topbar">
+    <div class="crumb">管理控制台 <b>运营首页</b></div>
+    <div class="who">
+      <div class="avatar" id="avatar">—</div>
+      <div><div class="name" id="userName">加载中…</div><div class="role" id="userRole">正在获取账号</div></div>
+      <button class="logout" id="logoutBtn">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <h1>运营总览</h1>
+        <p>平台基础信息、运行参数与今日运营数据</p>
+      </div>
+      <span class="pill"><i class="dot"></i>系统运行中</span>
+    </section>
+
+    <section class="grid stats">
+      <div class="stat brand"><div class="label">今日订单</div><div class="value" id="todayOrders">—</div><div class="foot">今日完成/计价订单</div></div>
+      <div class="stat green"><div class="label">今日营收</div><div class="value" id="todayRevenue">—</div><div class="foot">已计价订单金额</div></div>
+      <div class="stat"><div class="label">在线车辆</div><div class="value" id="onlineVehicles">—</div><div class="foot">5 分钟内有定位</div></div>
+      <div class="stat orange"><div class="label">未处置报警</div><div class="value" id="openAlarms">—</div><div class="foot">待受理/处理中</div></div>
+      <div class="stat"><div class="label">车队数</div><div class="value" id="fleetCount">—</div><div class="foot">有效车队</div></div>
+      <div class="stat"><div class="label">在册司机</div><div class="value" id="driverCount">—</div><div class="foot">状态正常</div></div>
+    </section>
+
+    <section class="cols">
+      <div class="panel">
+        <div class="panel-head"><h2>基础信息</h2><span class="hint">当前登录与平台</span></div>
+        <div class="panel-body">
+          <dl class="kv">
+            <dt>平台名称</dt><dd>出租汽车运营监管平台</dd>
+            <dt>版本 / 阶段</dt><dd><span class="tag" id="versionTag">v1.0.0</span> <span class="tag" id="stageTag">阶段 1~10</span></dd>
+            <dt>当前账号</dt><dd id="accountText">—</dd>
+            <dt>所属车队</dt><dd id="fleetText">—</dd>
+            <dt>数据范围</dt><dd id="scopeText">—</dd>
+            <dt>上次登录</dt><dd id="lastLoginText">—</dd>
+            <dt>服务启动</dt><dd id="startTimeText">—</dd>
+            <dt>已运行</dt><dd id="uptimeText">—</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>运行参数</h2><span class="hint">只读 · 非敏感配置</span></div>
+        <div class="panel-body"><div class="params" id="params"></div></div>
+      </div>
+    </section>
+
+    <section class="grid quick">
+      <a href="/base"><div class="qico">▦</div><b>基础信息设置</b><small>车队、司机、车辆、终端与发票录入</small></a>
+      <a href="/monitor.html"><div class="qico">⌖</div><b>实时监控</b><small>车辆定位、在线状态与轨迹回放</small></a>
+      <a href="/alarm.html"><div class="qico">⚠</div><b>报警中心</b><small>三级报警受理、处置与联动抓拍</small></a>
+      <a href="/dashboard.html"><div class="qico">▤</div><b>数据大屏</b><small>运营趋势、车队排行与报警分布</small></a>
+      <a href="/driver.html"><div class="qico">☰</div><b>司机端</b><small>司机本人行程与接驾操作</small></a>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>最近报警</h2><a class="hint" href="/alarm.html">查看全部 →</a></div>
+      <div class="panel-body" style="padding-top:4px">
+        <table>
+          <thead><tr><th>报警编号</th><th>车辆</th><th>类型</th><th>等级</th><th>状态</th><th>时间</th></tr></thead>
+          <tbody id="alarmRows"><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">出租汽车运营监管平台 · 管理控制台</div>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const token = sessionStorage.getItem('taxi.token') || '';
+  if (!token) {
+    location.replace('/login?redirect=/admin');
+    return;
+  }
+
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+  const text = (id, v) => { const el = $(id); if (el) el.textContent = v == null || v === '' ? '—' : v; };
+  const money = (v) => '¥ ' + Number(v || 0).toFixed(2);
+  const time = (v) => v ? String(v).replace('T', ' ').slice(0, 19) : '—';
+  const duration = (s) => {
+    s = Number(s || 0);
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    if (d) return d + ' 天 ' + h + ' 小时';
+    if (h) return h + ' 小时 ' + m + ' 分';
+    return m + ' 分钟';
+  };
+
+  async function api(path) {
+    const resp = await fetch(path, { headers: { Authorization: 'Bearer ' + token } });
+    const body = await resp.json();
+    if (body.code === 401) {
+      sessionStorage.removeItem('taxi.token');
+      sessionStorage.removeItem('taxi.driver.token');
+      location.replace('/login?redirect=/admin');
+      throw new Error('登录已失效');
+    }
+    if (body.code !== 200) throw new Error(body.msg || '请求失败');
+    return body.data;
+  }
+
+  async function loadMe() {
+    const me = await api('/api/v1/auth/me');
+    const name = me.realName || me.username || '用户';
+    text('userName', name);
+    text('avatar', String(name).slice(0, 1));
+    const perms = Array.isArray(me.permissions) ? me.permissions : [];
+    const admin = perms.includes('monitor:view') || perms.includes('stats:view');
+    text('userRole', admin ? '平台管理员' : '普通用户');
+    text('accountText', me.username + (me.realName ? '（' + me.realName + '）' : ''));
+    text('fleetText', me.fleetId == null ? '全平台' : '车队 #' + me.fleetId);
+    const scope = { 1: '全部数据', 2: '本车队', 3: '本人数据' }[me.dataScope] || ('范围 ' + (me.dataScope ?? '-'));
+    text('scopeText', scope);
+    text('lastLoginText', time(me.lastLoginTime));
+    if (!admin) {
+      location.replace('/driver.html');
+      return;
+    }
+  }
+
+  async function loadStats() {
+    const s = await api('/api/v1/stats/overview');
+    text('todayOrders', s.todayOrders ?? 0);
+    text('todayRevenue', money(s.todayRevenue));
+    text('onlineVehicles', s.onlineVehicles ?? 0);
+    text('openAlarms', s.openAlarms ?? 0);
+    text('fleetCount', s.fleetCount ?? 0);
+    text('driverCount', s.driverCount ?? 0);
+  }
+
+  async function loadInfo() {
+    const info = await api('/api/v1/system/info');
+    text('versionTag', 'v' + (info.version || '1.0.0'));
+    text('stageTag', info.stage || '阶段 1~10');
+    text('startTimeText', time(info.startTime));
+    text('uptimeText', duration(info.uptimeSeconds));
+    const rows = [
+      ['REST 端口', info.serverPort],
+      ['808 接入', info.protocolEnabled ? ('已开启 · ' + info.protocolPort) : '已关闭'],
+      ['轨迹存储', info.trackProvider === 'tdengine' ? 'TDengine' : 'MySQL 兜底表'],
+      ['MySQL', (info.dbHost || '-') + ':' + (info.dbPort || '-') + ' / ' + (info.dbName || '-')],
+      ['Redis', (info.redisHost || '-') + ':' + (info.redisPort || '-')],
+      ['媒体目录', info.mediaStoragePath],
+      ['HLS 地址', info.mediaHlsBase],
+      ['发票模式', info.invoiceMock ? 'Mock（待接诺诺）' : '正式网关'],
+      ['报警升级', info.alarmLevel1Seconds + 's / ' + info.alarmLevel2Seconds + 's'],
+      ['默认分成', info.billingDefaultDriverShare],
+      ['JDK', info.javaVersion],
+      ['操作系统', info.osName]
+    ];
+    $('params').innerHTML = rows.map(([k, v]) =>
+      '<div class="param"><span>' + esc(k) + '</span><b>' + esc(v) + '</b></div>').join('');
+  }
+
+  async function loadAlarms() {
+    const page = await api('/api/v1/alarms?page=1&size=6');
+    const list = page.list || [];
+    if (!list.length) {
+      $('alarmRows').innerHTML = '<tr><td colspan="6" class="empty">暂无报警记录</td></tr>';
+      return;
+    }
+    $('alarmRows').innerHTML = list.map((a) => {
+      const level = Number(a.alarmLevel || 3);
+      const levelClass = level === 1 ? 'l1' : level === 2 ? 'l2' : 'l3';
+      const status = Number(a.handleStatus || 0);
+      const statusText = status === 2 ? '已处置' : status === 1 ? '处理中' : '未处置';
+      const statusClass = status === 2 ? 'ok' : levelClass;
+      const plate = a.plateNo || ('车辆 ' + (a.vehicleId || '-'));
+      return '<tr><td>' + esc(a.alarmNo) + '</td><td>' + esc(plate) + '</td><td>' +
+        esc(a.alarmTypeDesc || a.alarmType) + '</td><td><span class="badge ' + levelClass + '">' +
+        esc(a.alarmLevelDesc || (level + '级')) + '</span></td><td><span class="badge ' + statusClass + '">' +
+        statusText + '</span></td><td class="muted">' + time(a.alarmTime) + '</td></tr>';
+    }).join('');
+  }
+
+  function safeLoad(fn) {
+    return fn().catch((e) => {
+      if (!/登录已失效/.test(e.message)) console.warn(e);
+    });
+  }
+
+  $('logoutBtn').addEventListener('click', () => {
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } })
+      .catch(() => {}).finally(() => {
+        sessionStorage.removeItem('taxi.token');
+        sessionStorage.removeItem('taxi.driver.token');
+        sessionStorage.removeItem('taxi.user');
+        location.replace('/login');
+      });
+  });
+
+  safeLoad(loadMe).then(() => {
+    safeLoad(loadStats);
+    safeLoad(loadInfo);
+    safeLoad(loadAlarms);
+  });
+})();
+</script>
+</body>
+</html>

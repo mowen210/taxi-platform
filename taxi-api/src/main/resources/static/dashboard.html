@@ -47,14 +47,14 @@ canvas{width:100%;height:240px}
 <script>
 const $=id=>document.getElementById(id);let token=sessionStorage.getItem('taxi.token')||'';
 function login(e){e.preventDefault();fetch('/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})}).then(r=>r.json()).then(j=>{if(j.code!==200){$('msg').textContent=j.msg;return}token=j.data.token;sessionStorage.setItem('taxi.token',token);$('login').style.display='none';load()})}
-async function api(path){const r=await fetch(path,{headers:{Authorization:'Bearer '+token}});const j=await r.json();if(j.code===401){$('login').style.display='flex';throw new Error(j.msg)}return j.data}
+async function api(path){const r=await fetch(path,{headers:{Authorization:'Bearer '+token}});const j=await r.json();if(j.code===401){sessionStorage.removeItem('taxi.token');location.replace('/login?redirect=/dashboard.html');throw new Error('登录已失效')}return j.data}
 async function load(){try{const [o,t,f,a]=await Promise.all([api('/api/v1/stats/overview'),api('/api/v1/stats/trend?days=7'),api('/api/v1/stats/fleets?days=7'),api('/api/v1/stats/alarms?days=7')]);
 $('orders').textContent=o.todayOrders;$('revenue').textContent='¥'+Number(o.todayRevenue).toFixed(2);$('online').textContent=o.onlineVehicles;$('alarms').textContent=o.openAlarms;$('fleets').textContent=o.fleetCount;$('drivers').textContent=o.driverCount;
 drawTrend(t);drawAlarms(a);$('rank').innerHTML=f.map(x=>`<tr><td>${x.fleetName}</td><td>${x.orders}</td><td>¥${Number(x.revenue).toFixed(2)}</td></tr>`).join('')||'<tr><td colspan="3">暂无数据</td></tr>'}catch(e){}}
 function prep(c){const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const x=c.getContext('2d');x.scale(d,d);return[x,r.width,r.height]}
 function drawTrend(rows){const [x,w,h]=prep($('trend'));const max=Math.max(1,...rows.map(r=>r.orders));x.strokeStyle='#2f6f9f';x.lineWidth=2;x.beginPath();rows.forEach((r,i)=>{const px=30+i*(w-50)/Math.max(1,rows.length-1),py=h-30-(r.orders/max)*(h-60);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.fillStyle='#7fb7dd';rows.forEach((r,i)=>{const px=30+i*(w-50)/Math.max(1,rows.length-1);x.fillText(r.date.slice(5),px-14,h-8);x.fillStyle='#4fd1ff';x.fillText(r.orders,px-4,h-34);x.fillStyle='#7fb7dd'})}
 function drawAlarms(rows){const [x,w,h]=prep($('alarmChart'));const max=Math.max(1,...rows.map(r=>r.cnt));rows.slice(0,6).forEach((r,i)=>{const bw=(w-40)/Math.max(1,rows.slice(0,6).length);const bh=(r.cnt/max)*(h-50);x.fillStyle='#2f6f9f';x.fillRect(20+i*bw,h-30-bh,bw-12,bh);x.fillStyle='#9fc4de';x.fillText(r.type.slice(0,8),22+i*bw,h-10);x.fillStyle='#4fd1ff';x.fillText(r.cnt,22+i*bw,h-36-bh)})}
-if(token){$('login').style.display='none';load()}setInterval(()=>{$('clock').textContent=new Date().toLocaleString('zh-CN')},1000);setInterval(()=>{if(token)load()},15000);
+if(!token){location.replace('/login?redirect=/dashboard.html')}else{$('login').style.display='none';load()}setInterval(()=>{$('clock').textContent=new Date().toLocaleString('zh-CN')},1000);setInterval(()=>{if(token)load()},15000);
 </script>
 </body>
 </html>
