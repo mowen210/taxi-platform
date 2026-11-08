@@ -3,7 +3,7 @@
 面向巡游出租汽车的「终端—平台—监管」一体化平台。终端侧为计价器 + ISU（串口 + 808/905/1078），平台侧负责协议解析、订单、报警、发票、监控与结算。
 
 > 当前版本：**阶段 6~10（报警与媒体、计价结算、发票、报表大屏、司机端）**
-> 阶段 1~10 均已真实编译通过、单元测试通过（60 个用例），并在 MySQL + Redis + 真 TCP 报文环境实测。
+> 阶段 1~10 均已真实编译通过、单元测试通过（65 个用例），并在 MySQL + Redis + 真 TCP 报文环境实测。
 
 ## 一、技术栈
 
@@ -40,10 +40,14 @@ taxi-api ─┬→ taxi-application → taxi-infra → taxi-domain → taxi-comm
 ## 三、快速启动（Docker Compose）
 
 ```bash
-cp .env.example .env          # 修改数据库口令、AES/JWT/HMAC 密钥
-mvn -B -DskipTests package    # 生成 taxi-api/target/taxi-platform.jar
-docker compose -f deploy/docker-compose.yml --env-file .env up -d
+cp config/taxi.env.example config/taxi.env   # 唯一配置源：数据库、Redis、密钥、端口、媒体等
+# 编辑 config/taxi.env（Docker 的 DB_HOST/REDIS_HOST 用 mysql/redis）
+mvn -B -DskipTests package                     # 生成 taxi-api/target/taxi-platform.jar
+docker compose -f deploy/docker-compose.yml --env-file config/taxi.env up -d
 ```
+
+Spring Boot 启动时会自动加载 `config/taxi.env`；代码只引用 `${KEY:默认值}`，
+不再从多处读取配置。加载优先级：系统环境变量/`-D` > `config/taxi.env` > `application.yml` 默认值。
 
 首次启动会自动执行 `deploy/mysql/init/01_schema.sql`、`02_seed.sql`、`03_stage2_menu.sql`、`04_stage3_order.sql`、`05_stage5_monitor.sql`、`06_stage6_alarm.sql`、`07_stage7_billing.sql`、`08_stage8_invoice.sql`、`09_stage9_stats.sql`、`10_stage10_driver.sql`。
 
@@ -133,6 +137,7 @@ java simulator/Jt808Simulator.java --host 127.0.0.1 --port 7611 \
 - `docs/api/阶段5-接口文档.md`：轨迹、WebSocket、监控页面与轨迹库配置
 - `docs/api/阶段6-10-接口文档.md`：报警/媒体、计价结算、发票、报表、司机端接口
 - `docs/部署文档.md`：Docker Compose、裸机、TDengine、MediaMTX、Nginx、备份与排障
+- `config/taxi.env.example`：唯一运行时配置模板（数据库、Redis、密钥、端口、媒体、报警、结算）
 - `docs/test/阶段1-自测说明.md`：环境准备、用例步骤、验收标准
 - `docs/test/阶段4-自测说明.md`：808 实测记录、缺陷与修复、清理 SQL
 - `docs/test/阶段5-自测说明.md`：轨迹与 WebSocket 实测、未测项、清理 SQL

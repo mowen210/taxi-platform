@@ -11,4 +11,6 @@ logs/
 node_modules/
 dist/
 media/
+config/taxi.env
+config/*.local.env
 .DS_Store

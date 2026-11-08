@@ -67,6 +67,32 @@ security:
     max-fail: ${LOGIN_MAX_FAIL:5}
     lock-minutes: ${LOGIN_LOCK_MINUTES:15}
 
+# 报警升级阈值（秒）：一级报警超时升二级，二级报警超时升三级
+alarm:
+  escalate:
+    level1-seconds: ${ALARM_LEVEL1_SECONDS:600}
+    level2-seconds: ${ALARM_LEVEL2_SECONDS:300}
+
+# 结算默认司机分成比例（方案未配置时使用）
+billing:
+  default-driver-share: ${BILLING_DEFAULT_DRIVER_SHARE:0.8000}
+
+# 电子发票：未接诺诺前使用 mock
+invoice:
+  mock: ${INVOICE_MOCK:true}
+  pdf-base: ${INVOICE_PDF_BASE:https://invoice.example.com/pdf}
+
+# 报警媒体与 1078
+media:
+  storage-path: ${MEDIA_STORAGE_PATH:./media}
+  hls-base: ${MEDIA_HLS_BASE:http://127.0.0.1:8888}
+  push-ip: ${MEDIA_PUSH_IP:127.0.0.1}
+  push-port: ${MEDIA_PUSH_PORT:8554}
+
+# 跨域：仅本地联调，生产由 Nginx 收敛
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+
 logging:
   config: classpath:logback-spring.xml
 

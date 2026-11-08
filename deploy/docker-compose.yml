@@ -1,7 +1,8 @@
 # =====================================================================
-# 阶段 1 部署编排：MySQL8 + Redis7 + TDengine + 应用 + Nginx
-# 使用前：cp .env.example .env 并修改密钥；先执行 mvn -DskipTests package
-# 启动：docker compose -f deploy/docker-compose.yml --env-file .env up -d
+# 阶段 1~10 部署编排：MySQL8 + Redis7 + TDengine + 应用 + Nginx
+# 唯一配置：cp config/taxi.env.example config/taxi.env 并修改
+# 启动：mvn -DskipTests package
+#       docker compose -f deploy/docker-compose.yml --env-file config/taxi.env up -d
 # =====================================================================
 services:
   mysql:
@@ -61,43 +62,18 @@ services:
     image: eclipse-temurin:17-jre
     container_name: taxi-app
     restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - ../config/taxi.env
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      DB_HOST: ${DB_HOST:-mysql}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-taxi_platform}
-      DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-root}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-7200}
-      AES_KEY: ${AES_KEY}
-      HMAC_SECRET: ${HMAC_SECRET}
-      LOGIN_MAX_FAIL: ${LOGIN_MAX_FAIL:-5}
-      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES:-15}
-      PROTOCOL_ENABLED: ${PROTOCOL_ENABLED:-true}
-      PROTOCOL_PORT: ${PROTOCOL_PORT:-7611}
-      MEDIA_STORAGE_PATH: /app/media
-      MEDIA_HLS_BASE: ${MEDIA_HLS_BASE:-http://127.0.0.1:8888}
-      MEDIA_PUSH_IP: ${MEDIA_PUSH_IP:-127.0.0.1}
-      MEDIA_PUSH_PORT: ${MEDIA_PUSH_PORT:-8554}
-      INVOICE_MOCK: ${INVOICE_MOCK:-true}
-      INVOICE_PDF_BASE: ${INVOICE_PDF_BASE:-https://invoice.example.com/pdf}
-      TRACK_PROVIDER: ${TRACK_PROVIDER:-mysql}
-      TDENGINE_URL: ${TDENGINE_URL:-http://tdengine:6041}
-      TDENGINE_DATABASE: ${TDENGINE_DATABASE:-taxi_track}
-      TDENGINE_USERNAME: ${TDENGINE_USERNAME:-root}
-      TDENGINE_PASSWORD: ${TDENGINE_PASSWORD:-taosdata}
-      TZ: Asia/Shanghai
     command: ["java", "-XX:MaxRAMPercentage=70", "-Duser.timezone=Asia/Shanghai", "-jar", "/app/taxi-platform.jar"]
     volumes:
       - ../taxi-api/target/taxi-platform.jar:/app/taxi-platform.jar:ro
+      - ../config:/app/config:ro
       - app-logs:/app/logs
       - media-data:/app/media
     ports:
